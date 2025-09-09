@@ -6,8 +6,9 @@
 // BLE-MIDI設定
 BLEMIDI_CREATE_INSTANCE("KantanPartChanger", MIDI);
 
-// 音階マッピング（C5からA5）
-const uint8_t midiNotes[6] = {60, 62, 64, 65, 67, 69}; // C5, D5, E5, F5, G5, A5
+// 音階マッピング（LEDの状態に応じて切り替え）
+const uint8_t midiNotesOn[6] = {60, 62, 64, 66, 68, 70};  // LED点灯時のノート
+const uint8_t midiNotesOff[6] = {61, 63, 65, 67, 69, 71}; // LED消灯時のノート
 
 // ★設定★（配列化）
 const uint8_t LED_PINS[6] = {13, 5, 2, 7, 11, 3};    // LED ピン番号
@@ -29,6 +30,7 @@ bool ledStates[6] = {false, false, false, false, false, false};
 uint8_t lastButtonStates[6] = {0, 0, 0, 0, 0, 0};
 uint32_t lastDebounceTimes[6] = {0, 0, 0, 0, 0, 0};
 bool buttonPressed[6] = {false, false, false, false, false, false}; // ボタン押下状態追加
+uint8_t currentMidiNote[6] = {0, 0, 0, 0, 0, 0}; // 現在送信中のMIDIノート
 const uint32_t debounceMs = 50;
 
 // 汎用LED切り替え関数（MIDI送信なし）
@@ -105,25 +107,30 @@ void loop() {
       Serial.print("[DEBUG] Button"); Serial.print(i + 1); Serial.println(" state changed");
       
       if (reading == HIGH && lastButtonStates[i] == LOW) {
-        // ボタン押下時: MIDI Note ON (LOW→HIGH)
-        MIDI.sendNoteOn(midiNotes[i], 127, 1);
-        Serial.print("[BLE-MIDI] Note ON: "); Serial.print(NOTE_NAMES[i]); 
-        Serial.print(" ("); Serial.print(midiNotes[i]); Serial.println(")");
-        Serial.print("[DEBUG] Button"); Serial.print(i + 1); Serial.println(" press detected!");
-        
-        // ボタンが押されたときのみLED切り替え（Note ONとは独立）
+        // ボタン押下時: LEDの状態に応じてMIDI Note ON
         if (!buttonPressed[i]) {
-          toggleLED(i);
+          toggleLED(i); // まずLEDを切り替え
           buttonPressed[i] = true;
+          
+          // LEDの新しい状態に応じてMIDIノートを決定
+          uint8_t noteToSend = ledStates[i] ? midiNotesOn[i] : midiNotesOff[i];
+          currentMidiNote[i] = noteToSend; // 送信中ノートを記録
+          
+          MIDI.sendNoteOn(noteToSend, 127, 1);
+          Serial.print("[BLE-MIDI] Note ON: "); Serial.print(noteToSend);
+          Serial.print(" (LED "); Serial.print(ledStates[i] ? "ON" : "OFF"); Serial.println(" state)");
+          Serial.print("[DEBUG] Button"); Serial.print(i + 1); Serial.println(" press detected!");
         }
         
       } else if (reading == LOW && lastButtonStates[i] == HIGH) {
-        // ボタン離した時: MIDI Note OFF (HIGH→LOW)
-        MIDI.sendNoteOff(midiNotes[i], 0, 1);
-        Serial.print("[BLE-MIDI] Note OFF: "); Serial.print(NOTE_NAMES[i]); 
-        Serial.print(" ("); Serial.print(midiNotes[i]); Serial.println(")");
-        Serial.print("[DEBUG] Button"); Serial.print(i + 1); Serial.println(" release detected!");
-        
+        // ボタン離した時: 対応するMIDI Note OFF
+        if (currentMidiNote[i] != 0) {
+          MIDI.sendNoteOff(currentMidiNote[i], 0, 1);
+          Serial.print("[BLE-MIDI] Note OFF: "); Serial.print(currentMidiNote[i]); Serial.println();
+          Serial.print("[DEBUG] Button"); Serial.print(i + 1); Serial.println(" release detected!");
+          
+          currentMidiNote[i] = 0; // ノート送信状態リセット
+        }
         buttonPressed[i] = false; // ボタン押下状態リセット
       }
       
