@@ -1,15 +1,11 @@
 # KantanPartChanger
 
-## ハードウェア要件
-
-- [M5Stack StampS3](https://www.switch-science.com/products/10377)（メインボード）
-- 6 x [Grove Mech Keycap](https://wiki.seeedstudio.com/Grove-Mech_Keycap/)（ボタンとLED一体モジュール）
-- [説軸、バッテリー管理モジュール](https://www.switch-science.com/products/9689)（接続・バッテリー管理） 
-**この機器はKANTAN_Play（通称かんぷれ）専用で、独自ファームウェアが必要です。**
 
 ## 概要
 
-KantanPartChangerは、物理ボタンまたはMIDI Control Changeメッセージを使って6つのパート（チャンネル）をオン/オフ切り替えできるBLE-MIDIコントローラーです。各パートはNeoPixel LEDで表現され、状態とバッテリー残量に基づいて色が変わります。
+KantanPartChangerは、物理キーを使ってかんぷれのパートをオン/オフ切り替えできるBLE-MIDIコントローラーです。各パートのオンオフはキー内蔵の LEDで表現され、状態とバッテリー残量に基づいて色が変わります。
+
+**この機器はKANTAN_Play（通称かんぷれ）専用で、独自ファームウェアが必要です。**
 
 **かんぷれ用独自ファームウェアは以下に存在します:**  
 https://github.com/nobynobynoby/KANTAN_Play_core-nori-fork/tree/feature/kantanpartchanger-support
@@ -27,6 +23,13 @@ https://github.com/nobynobynoby/KANTAN_Play_core-nori-fork/tree/feature/kantanpa
 - **バッテリー監視**: 移動平均によるリアルタイムバッテリー電圧監視。
 - **MIDI CC処理**: チャンネル1のCC16でパート切り替えに対応。
 
+## ハードウェア要件
+
+- [M5Stack StampS3](https://www.switch-science.com/products/10377)（メインボード）
+- 6 x [Grove Mech Keycap](https://wiki.seeedstudio.com/Grove-Mech_Keycap/)（ボタンとLED一体モジュール）
+- [説軸、バッテリー管理モジュール](https://www.switch-science.com/products/9689)（接続・バッテリー管理） 
+
+
 ## ソフトウェア要件
 
 - PlatformIO
@@ -39,7 +42,7 @@ https://github.com/nobynobynoby/KANTAN_Play_core-nori-fork/tree/feature/kantanpa
 
 1. デバイスを電源オン。
 2. DAWやMIDIアプリからBLE-MIDIで接続。
-3. ボタンでパートを切り替え、またはチャンネル1のCC16でパート状態をビットマスクで送信。
+3. ボタンでパートを切り替え、またはかんぷれ側でパートのオンオフ
 
 
 ### ノートオン/オフとパートの対応
