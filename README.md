@@ -8,7 +8,7 @@ KantanPartChangerは、物理キーを使ってかんぷれのパートをオン
 **この機器はKANTAN_Play（通称かんぷれ）専用で、独自ファームウェアが必要です。**
 
 **かんぷれ用独自ファームウェアは以下に存在します:**  
-https://github.com/nobynobynoby/KANTAN_Play_core-nori-fork/tree/feature/kantanpartchanger-support
+https://github.com/nobynobynoby/KANTAN_Play_core-nori-fork/
 
 ![全体像](img/IMG_20250912_203441_1.jpg)
 
@@ -55,7 +55,8 @@ https://github.com/nobynobynoby/KANTAN_Play_core-nori-fork/tree/feature/kantanpa
 パートの有効/無効状態がノートオン/オフに対応しています。  
 **かんぷれ側の設定で、これらのノートをパートオン/オフに割り当ててください。**
 
-<video src="img/VID_20250912_174708.mp4" controls></video>
+### 動作サンプル動画
+[動作サンプル動画](img/VID_20250912_174708.mp4)
 
 ## ライセンス
 
