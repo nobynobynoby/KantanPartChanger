@@ -6,11 +6,12 @@
 // --- バッテリー電圧取得・移動平均用 ---
 #define BATTERY_ADC_PIN 8
 #define BATTERY_SAMPLES 10           // 移動平均のサンプル数
-#define BATTERY_UPDATE_INTERVAL 30000 // LED更新間隔（30秒）
+#define BATTERY_UPDATE_INTERVAL 1000 // LED更新間隔（1秒）
 static float batteryVoltageSamples[BATTERY_SAMPLES] = {0.0};
 static int batterySampleIndex = 0;
 static unsigned long lastBatteryLEDUpdate = 0;
 static float displayedBatteryVoltage = 4.2; // 表示用バッテリー電圧
+static float currentBatteryPercent = 100.0; // 現在のバッテリー残量パーセント
 static bool batteryInitialized = false; // 初期化フラグ
 
 // バッテリー電圧取得＆移動平均＆LED色制御（仮）
@@ -41,18 +42,33 @@ void updateBatteryLEDs() {
     }
     float averageVoltage = sum / BATTERY_SAMPLES;
 
-    // 30秒間隔でLED表示を更新
+    // 1秒間隔でLED表示を更新
     unsigned long currentTime = millis();
     if (currentTime - lastBatteryLEDUpdate >= BATTERY_UPDATE_INTERVAL) {
       displayedBatteryVoltage = averageVoltage;
       lastBatteryLEDUpdate = currentTime;
+      
+      // バッテリー電圧から残量パーセントを計算（リチウムバッテリー想定）
+      // 4.2V=100%, 3.7V=50%, 3.2V=0% の線形近似
+      if (displayedBatteryVoltage >= 4.2) {
+        currentBatteryPercent = 100.0;
+      } else if (displayedBatteryVoltage <= 3.2) {
+        currentBatteryPercent = 0.0;
+      } else {
+        currentBatteryPercent = ((displayedBatteryVoltage - 3.2) / (4.2 - 3.2)) * 100.0;
+      }
+      
+      // 3.0V以下で強制ディープスリープ（バッテリー保護）
+      if (displayedBatteryVoltage <= 3.0) {
+        Serial.println("[BATTERY] Critical low voltage detected! Entering deep sleep...");
+        delay(1000); // ログ出力を確実に
+        esp_deep_sleep_start();
+      }
+      
+      Serial.print("[BATTERY] Voltage: "); Serial.print(displayedBatteryVoltage, 2);
+      Serial.print("V, Percent: "); Serial.print(currentBatteryPercent, 1); Serial.println("%");
     }
   }
-
-  // displayedBatteryVoltage に応じてLEDを点灯（仮: 今は20%以上扱い）
-  // 例: ここでbatteryPercentを計算し、toggleLED等で色を変える
-  // float batteryPercent = ...;
-  // if (batteryPercent <= 5) { ... } else if (batteryPercent <= 20) { ... } else { ... }
 }
 
 // BLE-MIDI設定
@@ -93,14 +109,13 @@ const uint32_t debounceMs = 50;
 
 // 汎用LED切り替え関数（MIDI送信なし）
 void toggleLED(uint8_t index) {
-  // 仮バッテリー残量（今は常に100%扱い）
-  int batteryPercent = 100;
+  // 実際のバッテリー残量を使用
   if (!ledStates[index]) {
     uint8_t r = 0, g = 0, b = 0;
-    if (batteryPercent <= 5) {
+    if (currentBatteryPercent <= 5) {
       // 5%以下は赤
       r = 255; g = 0; b = 0;
-    } else if (batteryPercent <= 20) {
+    } else if (currentBatteryPercent <= 20) {
       // 20%以下は黄
       r = 255; g = 255; b = 0;
     } else {
@@ -108,7 +123,7 @@ void toggleLED(uint8_t index) {
       if (index < 3) {
         r = 0; g = 255; b = 0; // 緑
       } else {
-        r = 128; g = 0; b = 128; // 紫
+        r = 255; g = 0; b = 255; // 紫
       }
     }
     strips[index].setPixelColor(0, strips[index].Color(r, g, b));
